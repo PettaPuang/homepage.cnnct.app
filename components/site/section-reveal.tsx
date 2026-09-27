@@ -5,14 +5,24 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+import {
+  appendHold,
+  clearHandoff,
+  coverProgress,
+  foldOffset,
+  holdLayer,
+  pullHandoff,
+  sectionGap,
+  shiftHandoff,
+  viewportHeight,
+} from "@/components/site/handoff";
+
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const pinPriority: Record<string, number> = {
   services: -2,
   work: -3,
 };
-
-const handoffPause = 0.4;
 
 export function SectionReveal({ children }: { children: React.ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -31,13 +41,18 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
 
         const clip = () => section.classList.add("is-reveal-clip");
         const unclip = () => section.classList.remove("is-reveal-clip");
+        const rowExtra = () =>
+          stickAfterReveal
+            ? Math.max(0, section.offsetHeight - viewportHeight())
+            : 0;
+        const syncLayer = (progress: number, active: boolean) => {
+          holdLayer(section, active && progress < coverProgress(rowExtra()));
+        };
         const holdAtTop = () => {
           section.style.top = "0px";
-          section.style.zIndex = "8";
         };
         const releaseTop = () => {
           section.style.removeProperty("top");
-          section.style.removeProperty("z-index");
         };
 
         clip();
@@ -47,32 +62,24 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         const stickAfterReveal = section.id === "work";
         const handoff = section.id === "services";
         const nextSection = section.nextElementSibling;
-        const heldMargin = { offset: 0 };
+        const hold = { offset: 0 };
+        const shiftNext = () => {
+          if (!(nextSection instanceof HTMLElement)) {
+            return;
+          }
 
+          shiftHandoff(nextSection, hold.offset);
+        };
         const placeNext = () => {
           if (!(nextSection instanceof HTMLElement)) {
             return;
           }
 
-          const ownGap =
-            Number.parseFloat(getComputedStyle(section).marginBottom) || 0;
-          const spacer = section.parentElement;
-          const spacerGap = spacer?.classList.contains("pin-spacer")
-            ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
-            : 0;
           const distance = stickAfterReveal
             ? section.offsetHeight
-            : window.innerHeight;
-          const pull = distance + (ownGap || spacerGap) - heldMargin.offset;
-          const nextSpacer = nextSection.parentElement;
-          const target = nextSpacer?.classList.contains("pin-spacer")
-            ? nextSpacer
-            : nextSection;
+            : viewportHeight();
 
-          target.style.marginTop = `${-pull}px`;
-          if (target !== nextSection) {
-            nextSection.style.marginTop = "0px";
-          }
+          pullHandoff(nextSection, distance + sectionGap(section), hold.offset);
 
           if (stickAfterReveal) {
             nextSection.style.minHeight = `${section.offsetHeight}px`;
@@ -109,15 +116,16 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
             start: "top top",
             end: () => {
               if (handoff) {
-                return "+=200%";
+                return `+=${viewportHeight() * 2}`;
               }
 
               if (!stickAfterReveal) {
-                return "+=100%";
+                return `+=${viewportHeight()}`;
               }
 
-              const extra = Math.max(0, section.offsetHeight - window.innerHeight);
-              return `+=${window.innerHeight * 2 + extra}`;
+              const extra = rowExtra();
+              const height = viewportHeight();
+              return `+=${height * 2 + extra}`;
             },
             pin: true,
             scrub: true,
@@ -125,30 +133,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
             invalidateOnRefresh: true,
             refreshPriority: pinPriority[section.id] ?? -2,
             onUpdate: (self) => {
-              const spacer = section.parentElement;
-              const setLayer = (zIndex: string) => {
-                section.style.zIndex = zIndex;
-                if (spacer?.classList.contains("pin-spacer")) {
-                  spacer.style.zIndex = zIndex;
-                }
-              };
-
-              if (handoff) {
-                const coverAt = (1 + handoffPause) / 2;
-                setLayer(self.progress < coverAt ? "8" : "2");
-                return;
-              }
-
-              if (!stickAfterReveal) {
-                return;
-              }
-
-              const extra = Math.max(0, section.offsetHeight - window.innerHeight);
-              const total = window.innerHeight * 2 + extra;
-              const coverAt =
-                (window.innerHeight + extra + window.innerHeight * handoffPause) /
-                total;
-              setLayer(self.progress < coverAt ? "8" : "3");
+              syncLayer(self.progress, self.isActive);
             },
             onToggle: (self) => {
               if (self.isActive) {
@@ -157,12 +142,14 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
                 }
                 section.classList.add("is-reveal-pin");
                 holdAtTop();
+                syncLayer(self.progress, true);
                 clip();
                 return;
               }
 
               section.classList.remove("is-reveal-pin");
               releaseTop();
+              holdLayer(section, false);
               if (self.progress > 0) {
                 unclip();
               }
@@ -171,6 +158,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
               }
             },
             onRefresh(self) {
+              syncLayer(self.progress, self.isActive);
               if (handoff || stickAfterReveal) {
                 placeNext();
               }
@@ -184,17 +172,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         timeline.from(
           body,
           {
-            y: () => {
-              const currentY = Number(gsap.getProperty(body, "y")) || 0;
-              const viewportHeight =
-                window.visualViewport?.height ?? window.innerHeight;
-              const topInSection =
-                body.getBoundingClientRect().top -
-                currentY -
-                section.getBoundingClientRect().top;
-
-              return viewportHeight - topInSection + 24;
-            },
+            y: () => foldOffset(body, section),
             duration: 0.65,
             ease: "none",
           },
@@ -202,26 +180,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         );
 
         const holdThenCover = (at: number | string) => {
-          timeline.to(
-            heldMargin,
-            {
-              offset: () => window.innerHeight * handoffPause,
-              duration: handoffPause,
-              ease: "none",
-              onUpdate: placeNext,
-            },
-            at,
-          );
-          timeline.to(
-            heldMargin,
-            {
-              offset: 0,
-              duration: 1 - handoffPause,
-              ease: "none",
-              onUpdate: placeNext,
-            },
-            ">",
-          );
+          appendHold(timeline, hold, shiftNext, at);
         };
 
         if (handoff) {
@@ -229,15 +188,12 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         }
 
         if (stickAfterReveal) {
-          const rowUnits = () => {
-            const extra = Math.max(0, section.offsetHeight - window.innerHeight);
-            return extra / window.innerHeight;
-          };
+          const rowUnits = () => rowExtra() / viewportHeight();
 
           timeline.to(
             body,
             {
-              y: () => -Math.max(0, section.offsetHeight - window.innerHeight),
+              y: () => -rowExtra(),
               duration: rowUnits(),
               ease: "none",
             },
@@ -249,15 +205,12 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         return () => {
           unclip();
           releaseTop();
+          holdLayer(section, false);
           clearWorkShift();
           section.classList.remove("has-section-reveal", "is-reveal-pin");
           if (nextSection instanceof HTMLElement && (handoff || stickAfterReveal)) {
-            nextSection.style.marginTop = "";
             nextSection.style.minHeight = "";
-            const nextSpacer = nextSection.parentElement;
-            if (nextSpacer?.classList.contains("pin-spacer")) {
-              nextSpacer.style.marginTop = "";
-            }
+            clearHandoff(nextSection);
           }
           if (stickAfterReveal) {
             ScrollTrigger.removeEventListener("refreshInit", clearWorkShift);

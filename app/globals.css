@@ -6,6 +6,8 @@
   --muted: #000000;
   --line: #000000;
   --page-gutter: clamp(1rem, 2.2vw, 2.5rem);
+  --viewport-height: 100svh;
+  --section-gap: clamp(4rem, 12svh, 8rem);
 }
 
 @theme inline {
@@ -72,7 +74,7 @@ a:focus-visible {
   position: relative;
   isolation: isolate;
   display: grid;
-  min-height: 100svh;
+  min-height: var(--viewport-height);
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
   padding: var(--page-gutter);
@@ -154,6 +156,7 @@ a:focus-visible {
 }
 
 .site-nav nav a:hover::after,
+.site-nav nav a[aria-current="page"]::after,
 .site-footer a:hover::after {
   transform: scaleX(1);
   transform-origin: left;
@@ -270,11 +273,11 @@ a:focus-visible {
   z-index: 1;
   top: var(--stack-top, 0);
   display: grid;
-  min-height: 100svh;
+  min-height: var(--viewport-height);
   grid-template-columns: minmax(7rem, 1fr) minmax(0, 3fr);
   align-items: center;
   gap: 2rem;
-  margin-bottom: clamp(4rem, 12svh, 8rem);
+  margin-bottom: var(--section-gap);
   background: var(--background);
   overflow: hidden;
 }
@@ -314,13 +317,13 @@ a:focus-visible {
   position: sticky;
   z-index: 2;
   top: var(--stack-top, 0);
-  min-height: 100svh;
+  min-height: var(--viewport-height);
   padding-block: 0;
   background: var(--background);
 }
 
 .ruled-section {
-  margin-bottom: clamp(4rem, 12svh, 8rem);
+  margin-bottom: var(--section-gap);
 }
 
 .ruled-section.is-reveal-clip {
@@ -513,7 +516,7 @@ a:focus-visible {
 .contact-section {
   position: relative;
   z-index: 4;
-  min-height: 100svh;
+  min-height: var(--viewport-height);
   background: var(--foreground);
   color: var(--background);
 }
@@ -522,11 +525,10 @@ a:focus-visible {
   position: sticky;
   top: 0;
   display: flex;
-  min-height: 100svh;
+  min-height: var(--viewport-height);
   flex-direction: column;
   justify-content: center;
   padding: var(--page-gutter);
-  padding-bottom: 4.5rem;
 }
 
 .contact-section h2 {
@@ -586,13 +588,9 @@ a:focus-visible {
 }
 
 .site-footer {
-  position: absolute;
-  right: var(--page-gutter);
-  bottom: var(--page-gutter);
-  left: var(--page-gutter);
   display: flex;
   justify-content: space-between;
-  padding-top: 1.2rem;
+  padding: 1.2rem var(--page-gutter) var(--page-gutter);
   border-top: 1px solid var(--background);
   background: var(--foreground);
   color: var(--background);
@@ -733,7 +731,7 @@ a:focus-visible {
 
   #services {
     display: flex;
-    height: 100svh;
+    height: var(--viewport-height);
     flex-direction: column;
   }
 

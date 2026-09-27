@@ -11,6 +11,7 @@ export default function Home() {
 
       <div className="post-hero">
         <section
+          id="about"
           className="statement section-shell stack-section"
           aria-labelledby="statement"
         >
@@ -75,7 +76,6 @@ export default function Home() {
         aria-labelledby="contact-title"
       >
         <div className="contact-pin">
-          <p className="section-label">START A CONVERSATION</p>
           <h2 id="contact-title">Have a system in mind?</h2>
           <a className="contact-link" href={contactHref}>
             <span>
@@ -96,12 +96,12 @@ export default function Home() {
             </span>
             <span aria-hidden="true">↗</span>
           </a>
-          <footer className="site-footer">
-            <p>© 2026 CNNCT.APP</p>
-            <a href="#">BACK TO TOP</a>
-          </footer>
         </div>
       </section>
+      <footer className="site-footer">
+        <p>© 2026 CNNCT.APP</p>
+        <a href="#">BACK TO TOP</a>
+      </footer>
       </div>
     </main>
   );

@@ -6,11 +6,21 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { FluidCanvas } from "@/components/fluid/fluid-canvas";
+import {
+  appendHold,
+  clearHandoff,
+  coverProgress,
+  holdLayer,
+  pullHandoff,
+  shiftHandoff,
+  syncViewportHeight,
+  viewportHeight,
+} from "@/components/site/handoff";
 import { siteContent } from "@/content/site";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const handoffPause = 0.4;
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 export function Hero() {
   const rootRef = useRef<HTMLElement>(null);
@@ -49,7 +59,7 @@ export function Hero() {
           window.getComputedStyle(section).minHeight,
         );
 
-        return Number.isFinite(minHeight) ? minHeight : window.innerHeight;
+        return Number.isFinite(minHeight) ? minHeight : viewportHeight();
       };
 
       const updateSectionLayout = () => {
@@ -108,11 +118,33 @@ export function Hero() {
           resizeObserver.observe(content);
         }
       });
+      syncViewportHeight();
+      let appliedHeight = viewportHeight();
+      let viewportTimer: number | undefined;
+
+      const settleViewport = () => {
+        const next = viewportHeight();
+        if (next === appliedHeight) {
+          return;
+        }
+
+        appliedHeight = next;
+        syncViewportHeight();
+        ScrollTrigger.refresh();
+      };
+
+      const scheduleViewport = () => {
+        window.clearTimeout(viewportTimer);
+        viewportTimer = window.setTimeout(settleViewport, 150);
+      };
+
       window.addEventListener("resize", scheduleSectionLayout);
+      window.addEventListener("resize", scheduleViewport);
       window.visualViewport?.addEventListener(
         "resize",
         scheduleSectionLayout,
       );
+      window.visualViewport?.addEventListener("resize", scheduleViewport);
       updateSectionLayout();
       scheduleSectionLayout();
 
@@ -120,11 +152,23 @@ export function Hero() {
         const hero = rootRef.current;
         const fromBottom = axis === "up";
 
-        if (postHero instanceof HTMLElement) {
-          gsap.set(postHero, {
-            marginTop: () => -window.innerHeight,
-          });
-        }
+        const hold = { offset: 0 };
+        const placePostHero = () => {
+          if (!(postHero instanceof HTMLElement)) {
+            return;
+          }
+
+          pullHandoff(postHero, viewportHeight(), hold.offset);
+        };
+        const applyHeroHold = () => {
+          if (!(postHero instanceof HTMLElement)) {
+            return;
+          }
+
+          shiftHandoff(postHero, hold.offset);
+        };
+
+        placePostHero();
 
         const syncTitleToWipe = () => {
           if (!fromBottom || !hero) {
@@ -168,13 +212,24 @@ export function Hero() {
           scrollTrigger: {
             trigger: hero,
             start: "top top",
-            end: "+=200%",
+            end: () => `+=${viewportHeight() * 2}`,
             pin: true,
             scrub: true,
             anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: 0,
-            onRefresh: syncTitleToWipe,
+            onUpdate: (self) => {
+              if (hero) {
+                holdLayer(hero, self.isActive && self.progress < coverProgress());
+              }
+            },
+            onRefresh: (self) => {
+              syncTitleToWipe();
+              placePostHero();
+              if (hero) {
+                holdLayer(hero, self.isActive && self.progress < coverProgress());
+              }
+            },
           },
         });
 
@@ -184,7 +239,7 @@ export function Hero() {
           ".hero-transition-wipe",
           {
             ...wipeProperties,
-            duration: 0.5,
+            duration: 1,
             ease: "none",
             onUpdate: syncTitleToWipe,
           },
@@ -196,44 +251,15 @@ export function Hero() {
             ".hero-transition-title",
             {
               clipPath: "inset(0% 0% 0% 0%)",
-              duration: 0.5,
+              duration: 1,
               ease: "none",
             },
             0,
           );
         }
 
-        const heldMargin = { offset: 0 };
-        const applyHeroHold = () => {
-          if (!(postHero instanceof HTMLElement)) {
-            return;
-          }
-
-          postHero.style.marginTop = `${-(window.innerHeight - heldMargin.offset)}px`;
-        };
-
-        scrollTimeline
-          .set("#hero-title", { visibility: "hidden" }, 0.5)
-          .to(
-            heldMargin,
-            {
-              offset: () => window.innerHeight * handoffPause,
-              duration: handoffPause / 2,
-              ease: "none",
-              onUpdate: applyHeroHold,
-            },
-            0.5,
-          )
-          .to(
-            heldMargin,
-            {
-              offset: 0,
-              duration: 0.5 * (1 - handoffPause),
-              ease: "none",
-              onUpdate: applyHeroHold,
-            },
-            ">",
-          );
+        scrollTimeline.set("#hero-title", { visibility: "hidden" }, 1);
+        appendHold(scrollTimeline, hold, applyHeroHold, 1);
 
         syncTitleToWipe();
       };
@@ -273,12 +299,21 @@ export function Hero() {
           );
       });
 
+      const clearPostHero = () => {
+        if (!(postHero instanceof HTMLElement)) {
+          return;
+        }
+
+        clearHandoff(postHero);
+      };
+
       media.add(
         "(prefers-reduced-motion: no-preference) and (max-width: 767px)",
         () => {
           createScrollTimeline("up");
 
           return () => {
+            clearPostHero();
             rootRef.current
               ?.querySelector<HTMLElement>(".hero-transition-title")
               ?.style.removeProperty("clip-path");
@@ -288,23 +323,32 @@ export function Hero() {
 
       media.add(
         "(prefers-reduced-motion: no-preference) and (min-width: 768px) and (orientation: landscape)",
-        () => createScrollTimeline("x"),
+        () => {
+          createScrollTimeline("x");
+          return clearPostHero;
+        },
       );
 
       media.add(
         "(prefers-reduced-motion: no-preference) and (min-width: 768px) and (orientation: portrait)",
-        () => createScrollTimeline("y"),
+        () => {
+          createScrollTimeline("y");
+          return clearPostHero;
+        },
       );
 
       return () => {
         resizeObserver.disconnect();
         window.cancelAnimationFrame(layoutFrame);
         window.clearTimeout(layoutTimer);
+        window.clearTimeout(viewportTimer);
         window.removeEventListener("resize", scheduleSectionLayout);
+        window.removeEventListener("resize", scheduleViewport);
         window.visualViewport?.removeEventListener(
           "resize",
           scheduleSectionLayout,
         );
+        window.visualViewport?.removeEventListener("resize", scheduleViewport);
         stackedSections.forEach((section) =>
           section.style.removeProperty("--stack-top"),
         );

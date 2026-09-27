@@ -5,9 +5,19 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+import {
+  appendHold,
+  clearHandoff,
+  coverProgress,
+  foldOffset,
+  holdLayer,
+  pullHandoff,
+  sectionGap,
+  shiftHandoff,
+  viewportHeight,
+} from "@/components/site/handoff";
 
-const handoffPause = 0.4;
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export function StatementLine({ text }: { text: string }) {
   const rootRef = useRef<HTMLSpanElement>(null);
@@ -32,29 +42,24 @@ export function StatementLine({ text }: { text: string }) {
         }
 
         const services = statement.nextElementSibling;
-        const heldMargin = { offset: 0 };
+        const hold = { offset: 0 };
+        const shiftServices = () => {
+          if (!(services instanceof HTMLElement)) {
+            return;
+          }
 
+          shiftHandoff(services, hold.offset);
+        };
         const placeServices = () => {
           if (!(services instanceof HTMLElement)) {
             return;
           }
 
-          const ownGap =
-            Number.parseFloat(getComputedStyle(statement).marginBottom) || 0;
-          const spacer = statement.parentElement;
-          const spacerGap = spacer?.classList.contains("pin-spacer")
-            ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
-            : 0;
-          const pull =
-            window.innerHeight + (ownGap || spacerGap) - heldMargin.offset;
-          const servicesSpacer = services.parentElement;
-          const target = servicesSpacer?.classList.contains("pin-spacer")
-            ? servicesSpacer
-            : services;
-          target.style.marginTop = `${-pull}px`;
-          if (target !== services) {
-            services.style.marginTop = "0px";
-          }
+          pullHandoff(
+            services,
+            viewportHeight() + sectionGap(statement),
+            hold.offset,
+          );
         };
 
         placeServices();
@@ -63,63 +68,46 @@ export function StatementLine({ text }: { text: string }) {
           scrollTrigger: {
             trigger: statement,
             start: "top top",
-            end: "+=200%",
+            end: () => `+=${viewportHeight() * 2}`,
             pin: true,
             scrub: true,
             anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: -1,
-            onRefresh: placeServices,
+            onUpdate: (self) => {
+              if (statement instanceof HTMLElement) {
+                holdLayer(
+                  statement,
+                  self.isActive && self.progress < coverProgress(),
+                );
+              }
+            },
+            onRefresh: (self) => {
+              placeServices();
+              if (statement instanceof HTMLElement) {
+                holdLayer(
+                  statement,
+                  self.isActive && self.progress < coverProgress(),
+                );
+              }
+            },
           },
         });
 
         timeline.from(
           copy,
           {
-            y: () => {
-              const currentY = Number(gsap.getProperty(copy, "y")) || 0;
-              const viewportHeight =
-                window.visualViewport?.height ?? window.innerHeight;
-              const topInSection =
-                copy.getBoundingClientRect().top -
-                currentY -
-                statement.getBoundingClientRect().top;
-
-              return viewportHeight - topInSection + 24;
-            },
+            y: () => foldOffset(copy, statement),
             duration: 0.65,
             ease: "none",
           },
           0.35,
         );
-        timeline.to(
-          heldMargin,
-          {
-            offset: () => window.innerHeight * handoffPause,
-            duration: handoffPause,
-            ease: "none",
-            onUpdate: placeServices,
-          },
-          1,
-        );
-        timeline.to(
-          heldMargin,
-          {
-            offset: 0,
-            duration: 1 - handoffPause,
-            ease: "none",
-            onUpdate: placeServices,
-          },
-          ">",
-        );
+        appendHold(timeline, hold, shiftServices, 1);
 
         return () => {
           if (services instanceof HTMLElement) {
-            services.style.marginTop = "";
-            const servicesSpacer = services.parentElement;
-            if (servicesSpacer?.classList.contains("pin-spacer")) {
-              servicesSpacer.style.marginTop = "";
-            }
+            clearHandoff(services);
           }
         };
       });
