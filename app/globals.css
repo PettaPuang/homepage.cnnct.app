@@ -2,9 +2,9 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #050505;
-  --muted: #6d6d6d;
-  --line: #111111;
+  --foreground: #000000;
+  --muted: #000000;
+  --line: #000000;
   --page-gutter: clamp(1rem, 2.2vw, 2.5rem);
 }
 
@@ -60,7 +60,6 @@ a:focus-visible {
 .site-nav nav,
 .site-nav-toggle,
 .hero-footer,
-.contact-note,
 .site-footer {
   font-family: var(--font-dm-mono), monospace;
   font-size: 0.68rem;
@@ -276,7 +275,6 @@ a:focus-visible {
   align-items: center;
   gap: 2rem;
   margin-bottom: clamp(4rem, 12svh, 8rem);
-  border-top: 1px solid var(--line);
   background: var(--background);
   overflow: hidden;
 }
@@ -318,7 +316,6 @@ a:focus-visible {
   top: var(--stack-top, 0);
   min-height: 100svh;
   padding-block: 0;
-  border-top: 1px solid var(--line);
   background: var(--background);
 }
 
@@ -369,7 +366,6 @@ a:focus-visible {
 }
 
 #services {
-  border-top-color: transparent;
   background: var(--foreground);
   color: var(--background);
 }
@@ -380,11 +376,11 @@ a:focus-visible {
 
 #services .service-grid,
 #services .service-card + .service-card {
-  border-color: rgb(255 255 255 / 28%);
+  border-color: var(--background);
 }
 
 #services .service-description {
-  color: rgb(255 255 255 / 62%);
+  color: var(--background);
 }
 
 #services.is-scroll-section .section-heading,
@@ -460,14 +456,24 @@ a:focus-visible {
   border-bottom: 1px solid var(--line);
   transition:
     background-color 200ms ease,
-    color 200ms ease,
-    padding 200ms ease;
+    color 200ms ease;
 }
 
 .work-row:hover {
-  padding-inline: 1rem;
   background: var(--foreground);
   color: var(--background);
+}
+
+.work-row > * {
+  transition: transform 200ms ease;
+}
+
+.work-row:hover > :not(time) {
+  transform: translateX(1rem);
+}
+
+.work-row:hover time {
+  transform: translateX(-1rem);
 }
 
 .work-row h3 {
@@ -546,8 +552,7 @@ a:focus-visible {
   text-transform: uppercase;
   transition:
     background-color 200ms ease,
-    color 200ms ease,
-    padding 200ms ease;
+    color 200ms ease;
 }
 
 .contact-link + .contact-link {
@@ -564,14 +569,20 @@ a:focus-visible {
 }
 
 .contact-link:hover {
-  padding-inline: 1rem;
   background: var(--background);
   color: var(--foreground);
 }
 
-.contact-note {
-  margin: 1rem 0 0;
-  opacity: 0.55;
+.contact-link > span {
+  transition: transform 200ms ease;
+}
+
+.contact-link:hover > span:first-child {
+  transform: translateX(1rem);
+}
+
+.contact-link:hover > span:last-child {
+  transform: translateX(-1rem);
 }
 
 .site-footer {
@@ -582,7 +593,7 @@ a:focus-visible {
   display: flex;
   justify-content: space-between;
   padding-top: 1.2rem;
-  border-top: 1px solid rgb(255 255 255 / 25%);
+  border-top: 1px solid var(--background);
   background: var(--foreground);
   color: var(--background);
 }
@@ -665,7 +676,6 @@ a:focus-visible {
   .site-nav nav,
   .site-nav-toggle,
   .hero-footer,
-  .contact-note,
   .site-footer,
   .contact-kind,
   .work-link {

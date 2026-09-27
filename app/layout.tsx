@@ -47,7 +47,7 @@ export default function RootLayout({
             width={1024}
             height={172}
             loading="eager"
-            unoptimized
+            sizes="(min-width: 1920px) 96px, (min-width: 1440px) 5vw, 72px"
           />
         </a>
         <SiteNav />

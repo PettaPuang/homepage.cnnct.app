@@ -1,5 +1,4 @@
 export const siteContent = {
-  brand: "CNNCT",
   descriptor: "DIGITAL ERP STUDIO",
   hero: ["SYSTEMS", "THAT MOVE", "BUSINESS"],
   scrollHero: ["connect", "and control", "business"],

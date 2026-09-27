@@ -32,8 +32,9 @@ export function StatementLine({ text }: { text: string }) {
         }
 
         const services = statement.nextElementSibling;
+        const heldMargin = { offset: 0 };
 
-        const coverWithServices = () => {
+        const placeServices = () => {
           if (!(services instanceof HTMLElement)) {
             return;
           }
@@ -41,14 +42,22 @@ export function StatementLine({ text }: { text: string }) {
           const ownGap =
             Number.parseFloat(getComputedStyle(statement).marginBottom) || 0;
           const spacer = statement.parentElement;
-          const spacerGap =
-            spacer?.classList.contains("pin-spacer")
-              ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
-              : 0;
-          services.style.marginTop = `${-(window.innerHeight + (ownGap || spacerGap))}px`;
+          const spacerGap = spacer?.classList.contains("pin-spacer")
+            ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
+            : 0;
+          const pull =
+            window.innerHeight + (ownGap || spacerGap) - heldMargin.offset;
+          const servicesSpacer = services.parentElement;
+          const target = servicesSpacer?.classList.contains("pin-spacer")
+            ? servicesSpacer
+            : services;
+          target.style.marginTop = `${-pull}px`;
+          if (target !== services) {
+            services.style.marginTop = "0px";
+          }
         };
 
-        coverWithServices();
+        placeServices();
 
         const timeline = gsap.timeline({
           scrollTrigger: {
@@ -60,7 +69,7 @@ export function StatementLine({ text }: { text: string }) {
             anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: -1,
-            onRefresh: coverWithServices,
+            onRefresh: placeServices,
           },
         });
 
@@ -83,37 +92,13 @@ export function StatementLine({ text }: { text: string }) {
           },
           0.35,
         );
-        const heldMargin = { offset: 0 };
-        const applyServicesHold = () => {
-          if (!(services instanceof HTMLElement)) {
-            return;
-          }
-
-          const ownGap =
-            Number.parseFloat(getComputedStyle(statement).marginBottom) || 0;
-          const spacer = statement.parentElement;
-          const spacerGap = spacer?.classList.contains("pin-spacer")
-            ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
-            : 0;
-          const pull = window.innerHeight + (ownGap || spacerGap) - heldMargin.offset;
-          const servicesSpacer = services.parentElement;
-          const target =
-            servicesSpacer?.classList.contains("pin-spacer")
-              ? servicesSpacer
-              : services;
-          target.style.marginTop = `${-pull}px`;
-          if (target !== services) {
-            services.style.marginTop = "0px";
-          }
-        };
-
         timeline.to(
           heldMargin,
           {
             offset: () => window.innerHeight * handoffPause,
             duration: handoffPause,
             ease: "none",
-            onUpdate: applyServicesHold,
+            onUpdate: placeServices,
           },
           1,
         );
@@ -123,7 +108,7 @@ export function StatementLine({ text }: { text: string }) {
             offset: 0,
             duration: 1 - handoffPause,
             ease: "none",
-            onUpdate: applyServicesHold,
+            onUpdate: placeServices,
           },
           ">",
         );
@@ -131,6 +116,10 @@ export function StatementLine({ text }: { text: string }) {
         return () => {
           if (services instanceof HTMLElement) {
             services.style.marginTop = "";
+            const servicesSpacer = services.parentElement;
+            if (servicesSpacer?.classList.contains("pin-spacer")) {
+              servicesSpacer.style.marginTop = "";
+            }
           }
         };
       });

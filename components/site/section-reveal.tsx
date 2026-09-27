@@ -47,8 +47,9 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         const stickAfterReveal = section.id === "work";
         const handoff = section.id === "services";
         const nextSection = section.nextElementSibling;
+        const heldMargin = { offset: 0 };
 
-        const coverNext = () => {
+        const placeNext = () => {
           if (!(nextSection instanceof HTMLElement)) {
             return;
           }
@@ -59,11 +60,19 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           const spacerGap = spacer?.classList.contains("pin-spacer")
             ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
             : 0;
-
           const distance = stickAfterReveal
             ? section.offsetHeight
             : window.innerHeight;
-          nextSection.style.marginTop = `${-(distance + (ownGap || spacerGap))}px`;
+          const pull = distance + (ownGap || spacerGap) - heldMargin.offset;
+          const nextSpacer = nextSection.parentElement;
+          const target = nextSpacer?.classList.contains("pin-spacer")
+            ? nextSpacer
+            : nextSection;
+
+          target.style.marginTop = `${-pull}px`;
+          if (target !== nextSection) {
+            nextSection.style.marginTop = "0px";
+          }
 
           if (stickAfterReveal) {
             nextSection.style.minHeight = `${section.offsetHeight}px`;
@@ -71,7 +80,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         };
 
         if (handoff || stickAfterReveal) {
-          coverNext();
+          placeNext();
         }
 
         const clearWorkShift = () => {
@@ -163,7 +172,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
             },
             onRefresh(self) {
               if (handoff || stickAfterReveal) {
-                coverNext();
+                placeNext();
               }
               if (stickAfterReveal && !self.isActive && self.progress === 1) {
                 shiftWorkIntoFlow();
@@ -192,32 +201,6 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           0.35,
         );
 
-        const heldMargin = { offset: 0 };
-        const applyNextHold = () => {
-          if (!(nextSection instanceof HTMLElement)) {
-            return;
-          }
-
-          const ownGap =
-            Number.parseFloat(getComputedStyle(section).marginBottom) || 0;
-          const spacer = section.parentElement;
-          const spacerGap = spacer?.classList.contains("pin-spacer")
-            ? Number.parseFloat(getComputedStyle(spacer).marginBottom) || 0
-            : 0;
-          const distance = stickAfterReveal
-            ? section.offsetHeight
-            : window.innerHeight;
-          const pull = distance + (ownGap || spacerGap) - heldMargin.offset;
-          const nextSpacer = nextSection.parentElement;
-          const target = nextSpacer?.classList.contains("pin-spacer")
-            ? nextSpacer
-            : nextSection;
-          target.style.marginTop = `${-pull}px`;
-          if (target !== nextSection) {
-            nextSection.style.marginTop = "0px";
-          }
-        };
-
         const holdThenCover = (at: number | string) => {
           timeline.to(
             heldMargin,
@@ -225,7 +208,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
               offset: () => window.innerHeight * handoffPause,
               duration: handoffPause,
               ease: "none",
-              onUpdate: applyNextHold,
+              onUpdate: placeNext,
             },
             at,
           );
@@ -235,7 +218,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
               offset: 0,
               duration: 1 - handoffPause,
               ease: "none",
-              onUpdate: applyNextHold,
+              onUpdate: placeNext,
             },
             ">",
           );
@@ -271,6 +254,10 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           if (nextSection instanceof HTMLElement && (handoff || stickAfterReveal)) {
             nextSection.style.marginTop = "";
             nextSection.style.minHeight = "";
+            const nextSpacer = nextSection.parentElement;
+            if (nextSpacer?.classList.contains("pin-spacer")) {
+              nextSpacer.style.marginTop = "";
+            }
           }
           if (stickAfterReveal) {
             ScrollTrigger.removeEventListener("refreshInit", clearWorkShift);

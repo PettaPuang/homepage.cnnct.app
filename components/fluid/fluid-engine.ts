@@ -22,10 +22,7 @@ import {
 // sim 256, dye 1024, dissipation 0.95, threshold 1, white ink.
 
 const config = {
-  simResolution: 256,
-  dyeResolution: 1024,
   curl: 12,
-  pressureIterations: 50,
   pressureDecay: 0.8,
   velocityDissipation: 0.95,
   dyeDissipation: 0.95,
@@ -38,6 +35,68 @@ const config = {
   // Threshold keeps only dye above 1, so the splat is brighter than the white ink.
   dyeStrength: 2.5,
 };
+
+const qualityTiers = {
+  high: {
+    simResolution: 256,
+    dyeResolution: 1024,
+    pressureIterations: 50,
+    dprCap: 2,
+  },
+  medium: {
+    simResolution: 192,
+    dyeResolution: 768,
+    pressureIterations: 35,
+    dprCap: 1.5,
+  },
+  low: {
+    simResolution: 128,
+    dyeResolution: 512,
+    pressureIterations: 24,
+    dprCap: 1,
+  },
+} as const;
+
+type QualitySettings = (typeof qualityTiers)[keyof typeof qualityTiers];
+
+const IDLE_TAIL_MS = 3000;
+const RESIZE_DEBOUNCE_MS = 150;
+
+function selectQuality(): QualitySettings {
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  const memory =
+    typeof nav.deviceMemory === "number" ? nav.deviceMemory : undefined;
+  const cores =
+    typeof nav.hardwareConcurrency === "number"
+      ? nav.hardwareConcurrency
+      : undefined;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const viewportPixels =
+    Math.max(window.innerWidth, 1) * Math.max(window.innerHeight, 1) * dpr * dpr;
+
+  if (
+    viewportPixels > 8_000_000 ||
+    (memory !== undefined && memory <= 4) ||
+    (cores !== undefined && cores <= 4)
+  ) {
+    return qualityTiers.low;
+  }
+
+  const knownCapabilitySignals = [
+    memory === undefined ? null : memory >= 8,
+    cores === undefined ? null : cores >= 8,
+  ].filter((signal): signal is boolean => signal !== null);
+
+  if (
+    viewportPixels <= 4_000_000 &&
+    knownCapabilitySignals.length > 0 &&
+    knownCapabilitySignals.every(Boolean)
+  ) {
+    return qualityTiers.high;
+  }
+
+  return qualityTiers.medium;
+}
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -309,6 +368,7 @@ function createMaterial(
 
 export class FluidEngine {
   private readonly canvas: HTMLCanvasElement;
+  private readonly quality: QualitySettings;
   private readonly renderer: WebGLRenderer;
   private readonly scene = new Scene();
   private readonly camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -325,6 +385,7 @@ export class FluidEngine {
   private readonly displayMaterial: ShaderMaterial;
   private readonly dyeColor = new Vector3(config.dyeStrength, config.dyeStrength, config.dyeStrength);
   private readonly velocityColor = new Vector3();
+  private readonly velocityTexel = new Vector2();
   private readonly pointer = new Vector2(0.5, 0.5);
   private readonly previousPointer = new Vector2(0.5, 0.5);
   private velocity: DoubleTarget;
@@ -333,15 +394,19 @@ export class FluidEngine {
   private curl: WebGLRenderTarget;
   private pressure: DoubleTarget;
   private frameId: number | null = null;
-  private lastFrame = performance.now();
+  private resizeTimer: number | null = null;
+  private lastFrame = 0;
+  private activeUntil = 0;
   private moved = false;
   private inside = false;
   private hasPointer = false;
+  private needsClear = false;
   private sectionVisible = true;
   private destroyed = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    this.quality = selectQuality();
     this.renderer = new WebGLRenderer({
       canvas,
       alpha: true,
@@ -351,9 +416,10 @@ export class FluidEngine {
     this.renderer.outputColorSpace = LinearSRGBColorSpace;
     this.renderer.autoClear = false;
     this.renderer.setClearColor(0x000000, 0);
+    this.setRendererSize();
 
-    const sim = this.fieldSize(config.simResolution);
-    const dye = this.fieldSize(config.dyeResolution);
+    const sim = this.fieldSize(this.quality.simResolution);
+    const dye = this.fieldSize(this.quality.dyeResolution);
     this.velocity = new DoubleTarget(sim.width, sim.height);
     this.dye = new DoubleTarget(dye.width, dye.height);
     this.divergence = createTarget(sim.width, sim.height);
@@ -423,11 +489,9 @@ export class FluidEngine {
     this.quad = new Mesh(this.geometry, this.displayMaterial);
     this.scene.add(this.quad);
 
-    this.resize();
     window.addEventListener("pointermove", this.onPointerMove, { passive: true });
-    window.addEventListener("resize", this.resize, { passive: true });
+    window.addEventListener("resize", this.scheduleResize, { passive: true });
     document.addEventListener("visibilitychange", this.syncLoop);
-    this.syncLoop();
   }
 
   setVisible(visible: boolean) {
@@ -435,15 +499,43 @@ export class FluidEngine {
     this.syncLoop();
   }
 
+  setPointerBaseline(clientX: number, clientY: number) {
+    if (this.destroyed) {
+      return;
+    }
+
+    const point = this.normalizedPointer(clientX, clientY);
+
+    if (!point) {
+      return;
+    }
+
+    this.pointer.set(point.x, point.y);
+    this.previousPointer.copy(this.pointer);
+    this.hasPointer = true;
+    this.inside = true;
+    this.moved = false;
+  }
+
   dispose() {
+    if (this.destroyed) {
+      return;
+    }
+
     this.destroyed = true;
 
     if (this.frameId !== null) {
       cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer);
+      this.resizeTimer = null;
     }
 
     window.removeEventListener("pointermove", this.onPointerMove);
-    window.removeEventListener("resize", this.resize);
+    window.removeEventListener("resize", this.scheduleResize);
     document.removeEventListener("visibilitychange", this.syncLoop);
 
     this.velocity.dispose();
@@ -465,17 +557,9 @@ export class FluidEngine {
   }
 
   private readonly onPointerMove = (event: PointerEvent) => {
-    const rect = this.canvas.getBoundingClientRect();
+    const point = this.normalizedPointer(event.clientX, event.clientY);
 
-    if (rect.width === 0 || rect.height === 0) {
-      return;
-    }
-
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = 1 - (event.clientY - rect.top) / rect.height;
-    const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
-
-    if (!inside) {
+    if (!point) {
       this.inside = false;
       this.moved = false;
       return;
@@ -484,34 +568,82 @@ export class FluidEngine {
     // The first sample only records where the cursor already is.
     // Painting it would stamp a dot from the fake 0.5, 0.5 origin on refresh.
     if (!this.hasPointer) {
-      this.pointer.set(x, y);
-      this.previousPointer.set(x, y);
-      this.hasPointer = true;
-      this.inside = true;
-      this.moved = false;
+      this.setPointerBaseline(event.clientX, event.clientY);
       return;
     }
 
     this.previousPointer.copy(this.pointer);
-    this.pointer.set(x, y);
+    this.pointer.set(point.x, point.y);
     this.inside = true;
     this.moved = true;
+    this.needsClear = true;
+    this.activeUntil = performance.now() + IDLE_TAIL_MS;
+    this.syncLoop();
   };
 
-  private readonly resize = () => {
+  private normalizedPointer(clientX: number, clientY: number) {
+    const rect = this.canvas.getBoundingClientRect();
+
+    if (rect.width === 0 || rect.height === 0) {
+      return null;
+    }
+
+    const x = (clientX - rect.left) / rect.width;
+    const y = 1 - (clientY - rect.top) / rect.height;
+
+    if (x < 0 || x > 1 || y < 0 || y > 1) {
+      return null;
+    }
+
+    return { x, y };
+  }
+
+  private setRendererSize() {
     const width = Math.max(this.canvas.clientWidth, 1);
     const height = Math.max(this.canvas.clientHeight, 1);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setSize(width, height, false);
+    const dpr = Math.min(window.devicePixelRatio || 1, this.quality.dprCap);
+    this.renderer.setDrawingBufferSize(width, height, dpr);
+  }
 
-    const sim = this.fieldSize(config.simResolution);
-    const dye = this.fieldSize(config.dyeResolution);
+  private readonly scheduleResize = () => {
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer);
+    }
+
+    this.resizeTimer = window.setTimeout(() => {
+      this.resizeTimer = null;
+      this.resize();
+    }, RESIZE_DEBOUNCE_MS);
+  };
+
+  private resize() {
+    const width = Math.max(this.canvas.clientWidth, 1);
+    const height = Math.max(this.canvas.clientHeight, 1);
+    const dpr = Math.min(window.devicePixelRatio || 1, this.quality.dprCap);
+    const bufferWidth = Math.floor(width * dpr);
+    const bufferHeight = Math.floor(height * dpr);
+
+    if (
+      bufferWidth === this.renderer.domElement.width &&
+      bufferHeight === this.renderer.domElement.height
+    ) {
+      return;
+    }
+
+    this.renderer.setDrawingBufferSize(width, height, dpr);
+
+    const sim = this.fieldSize(this.quality.simResolution);
+    const dye = this.fieldSize(this.quality.dyeResolution);
     this.velocity.setSize(sim.width, sim.height);
     this.divergence.setSize(sim.width, sim.height);
     this.curl.setSize(sim.width, sim.height);
     this.pressure.setSize(sim.width, sim.height);
     this.dye.setSize(dye.width, dye.height);
-  };
+    this.moved = false;
+    this.activeUntil = 0;
+    this.needsClear = false;
+    this.syncLoop();
+  }
 
   private fieldSize(resolution: number) {
     const bufferWidth = Math.max(this.renderer.domElement.width, 1);
@@ -533,21 +665,47 @@ export class FluidEngine {
   }
 
   private readonly syncLoop = () => {
-    const shouldRun = !this.destroyed && this.sectionVisible && !document.hidden;
+    if (this.destroyed) {
+      return;
+    }
+
+    const now = performance.now();
+    const hasActivity = this.moved || now < this.activeUntil;
+    const shouldRun = this.sectionVisible && !document.hidden && hasActivity;
 
     if (!shouldRun && this.frameId !== null) {
       cancelAnimationFrame(this.frameId);
       this.frameId = null;
-      return;
     }
 
     if (shouldRun && this.frameId === null) {
-      this.lastFrame = performance.now();
+      this.lastFrame = now;
       this.frameId = requestAnimationFrame(this.renderFrame);
+      return;
+    }
+
+    if (
+      !hasActivity &&
+      this.sectionVisible &&
+      !document.hidden &&
+      this.needsClear
+    ) {
+      this.clearFluid();
     }
   };
 
   private readonly renderFrame = (now: number) => {
+    this.frameId = null;
+
+    if (this.destroyed || !this.sectionVisible || document.hidden) {
+      return;
+    }
+
+    if (!this.moved && now >= this.activeUntil) {
+      this.clearFluid();
+      return;
+    }
+
     const delta = Math.min((now - this.lastFrame) / 1000, 0.016666);
     this.lastFrame = now;
 
@@ -558,8 +716,30 @@ export class FluidEngine {
 
     this.step(delta);
     this.draw();
-    this.frameId = requestAnimationFrame(this.renderFrame);
+    this.syncLoop();
   };
+
+  private clearFluid() {
+    const targets = [
+      this.velocity.read,
+      this.velocity.write,
+      this.dye.read,
+      this.dye.write,
+      this.divergence,
+      this.curl,
+      this.pressure.read,
+      this.pressure.write,
+    ];
+
+    for (const target of targets) {
+      this.renderer.setRenderTarget(target);
+      this.renderer.clear();
+    }
+
+    this.renderer.setRenderTarget(null);
+    this.renderer.clear();
+    this.needsClear = false;
+  }
 
   private splatPointer() {
     const aspect = this.aspect;
@@ -607,7 +787,10 @@ export class FluidEngine {
   }
 
   private step(dt: number) {
-    const velocityTexel = this.texel(this.velocity.read);
+    const velocityTexel = this.velocityTexel.set(
+      1 / this.velocity.read.width,
+      1 / this.velocity.read.height,
+    );
 
     this.curlMaterial.uniforms.uVelocity.value = this.velocity.read.texture;
     this.curlMaterial.uniforms.texelSize.value.copy(velocityTexel);
@@ -631,7 +814,7 @@ export class FluidEngine {
     this.pressureMaterial.uniforms.uDivergence.value = this.divergence.texture;
     this.pressureMaterial.uniforms.texelSize.value.copy(velocityTexel);
 
-    for (let i = 0; i < config.pressureIterations; i += 1) {
+    for (let i = 0; i < this.quality.pressureIterations; i += 1) {
       this.pressureMaterial.uniforms.uPressure.value = this.pressure.read.texture;
       this.pass(this.pressureMaterial, this.pressure.write);
       this.pressure.swap();
@@ -677,10 +860,6 @@ export class FluidEngine {
     this.quad.material = material;
     this.renderer.setRenderTarget(target);
     this.renderer.render(this.scene, this.camera);
-  }
-
-  private texel(target: WebGLRenderTarget) {
-    return new Vector2(1 / target.width, 1 / target.height);
   }
 
   private get aspect() {
