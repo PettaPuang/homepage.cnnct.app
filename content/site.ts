@@ -4,8 +4,12 @@ export const siteContent = {
   hero: ["SYSTEMS", "THAT MOVE", "BUSINESS"],
   scrollHero: ["connect", "and control", "business"],
   introduction: [
-    "A minimal framework for presenting digital ERP products, control every business flow from one platform.",
-    "operations, accounting, and decisions.",
+    "A minimal framework for presenting digital ERP products,",
+    "control every business flow from one platform.",
+  ],
+  introductionId: [
+    "Kerangka sederhana untuk menampilkan produk ERP digital,",
+    "kendalikan setiap alur bisnis dari satu platform.",
   ],
   email: "admin@cnnct.app",
   instagram: "cnnct.app",
@@ -14,16 +18,20 @@ export const siteContent = {
       index: "01",
       title: "Dedicated SaaS ERP",
       description: "An ERP built specifically for your own business.",
+      descriptionId: "ERP yang dibangun khusus untuk bisnis Anda.",
     },
     {
       index: "02",
       title: "Custom Operation",
       description: "Fully customized business-flow operations.",
+      descriptionId: "Operasi alur bisnis yang disesuaikan sepenuhnya.",
     },
     {
       index: "03",
       title: "Business Compliance",
       description: "Business and accounting guidance, with priority support.",
+      descriptionId:
+        "Konsultasi bisnis dan akuntansi, dengan dukungan prioritas.",
     },
   ],
   work: [

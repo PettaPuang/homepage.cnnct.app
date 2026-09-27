@@ -278,6 +278,7 @@ a:focus-visible {
   margin-bottom: clamp(4rem, 12svh, 8rem);
   border-top: 1px solid var(--line);
   background: var(--background);
+  overflow: hidden;
 }
 
 .statement .section-label {
@@ -292,6 +293,13 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: -0.065em;
   line-height: 0.96;
+}
+
+.statement-copy {
+  all: unset;
+  display: block;
+  width: 100%;
+  cursor: pointer;
 }
 
 .statement h2 span {
@@ -316,6 +324,10 @@ a:focus-visible {
 
 .ruled-section {
   margin-bottom: clamp(4rem, 12svh, 8rem);
+}
+
+.ruled-section.is-reveal-clip {
+  overflow: hidden;
 }
 
 #work {
@@ -356,10 +368,35 @@ a:focus-visible {
   text-align: center;
 }
 
+#services {
+  border-top-color: transparent;
+  background: var(--foreground);
+  color: var(--background);
+}
+
+#services .section-heading {
+  background: var(--foreground);
+}
+
+#services .service-grid,
+#services .service-card + .service-card {
+  border-color: rgb(255 255 255 / 28%);
+}
+
+#services .service-description {
+  color: rgb(255 255 255 / 62%);
+}
+
 #services.is-scroll-section .section-heading,
 #work.is-scroll-section .section-heading {
   position: sticky;
   top: 0;
+}
+
+#services.has-section-reveal.is-scroll-section .section-heading,
+#work.has-section-reveal.is-reveal-pin.is-scroll-section .section-heading {
+  position: relative;
+  top: auto;
 }
 
 .service-grid {
@@ -387,12 +424,19 @@ a:focus-visible {
   line-height: 0.92;
 }
 
-.service-card > p:last-child {
+.service-card .service-description {
+  display: block;
   max-width: 30ch;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--muted);
+  font: inherit;
   font-size: 0.9rem;
   line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
 }
 
 .work-list {
@@ -463,13 +507,20 @@ a:focus-visible {
 .contact-section {
   position: relative;
   z-index: 4;
+  min-height: 100svh;
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.contact-pin {
+  position: sticky;
+  top: 0;
   display: flex;
   min-height: 100svh;
   flex-direction: column;
   justify-content: center;
   padding: var(--page-gutter);
-  background: var(--foreground);
-  color: var(--background);
+  padding-bottom: 4.5rem;
 }
 
 .contact-section h2 {
@@ -524,9 +575,13 @@ a:focus-visible {
 }
 
 .site-footer {
+  position: absolute;
+  right: var(--page-gutter);
+  bottom: var(--page-gutter);
+  left: var(--page-gutter);
   display: flex;
   justify-content: space-between;
-  padding-block: 1.2rem;
+  padding-top: 1.2rem;
   border-top: 1px solid rgb(255 255 255 / 25%);
   background: var(--foreground);
   color: var(--background);
@@ -554,6 +609,10 @@ a:focus-visible {
 }
 
 @media (min-width: 768px) {
+  #services {
+    --section-header-height: clamp(16rem, 42svh, 23rem);
+  }
+
   #services .section-heading h2 {
     font-size: clamp(4rem, min(10vw, 20svh), 10rem);
   }
@@ -662,13 +721,37 @@ a:focus-visible {
     margin-top: 0;
   }
 
+  #services {
+    display: flex;
+    height: 100svh;
+    flex-direction: column;
+  }
+
+  #services .section-reveal {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
   .service-grid {
+    flex: 1;
     grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
   }
 
   .service-card {
-    min-height: 14rem;
-    padding-block: 1rem;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    align-content: center;
+    column-gap: 0.75rem;
+    padding: 0.7rem 1.25rem;
+  }
+
+  .service-card .item-index {
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0.35rem 0 0;
   }
 
   .service-card + .service-card {
@@ -677,7 +760,15 @@ a:focus-visible {
   }
 
   .service-card h3 {
-    margin-top: 2.5rem;
+    max-width: none;
+    margin: 0;
+    font-size: clamp(1.55rem, 6.4vw, 2rem);
+  }
+
+  .service-card .service-description {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.35;
   }
 
   .work-row h3 {
@@ -686,6 +777,15 @@ a:focus-visible {
 
   .contact-section h2 {
     font-size: clamp(3.7rem, 18vw, 7rem);
+  }
+
+  .hero-transition-title {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  .hero-transition-wipe {
+    transform: scaleY(0);
+    transform-origin: center bottom;
   }
 }
 

@@ -1,4 +1,7 @@
 import { Hero } from "@/components/site/hero";
+import { SectionReveal } from "@/components/site/section-reveal";
+import { ServiceGrid } from "@/components/site/service-grid";
+import { StatementCopy } from "@/components/site/statement-copy";
 import { contactHref, instagramHref, siteContent } from "@/content/site";
 
 export default function Home() {
@@ -13,8 +16,7 @@ export default function Home() {
         >
         <p className="section-label">ABOUT</p>
         <h2 id="statement">
-          <span>{siteContent.introduction[0]}</span>
-          <span>{siteContent.introduction[1]}</span>
+          <StatementCopy />
         </h2>
       </section>
 
@@ -28,15 +30,9 @@ export default function Home() {
           <h2 id="services-title">Services</h2>
         </div>
 
-        <div className="service-grid">
-          {siteContent.services.map((service) => (
-            <article className="service-card" key={service.index}>
-              <p className="item-index">{service.index}</p>
-              <h3>{service.title}</h3>
-              <p>{service.description}</p>
-            </article>
-          ))}
-        </div>
+        <SectionReveal>
+          <ServiceGrid />
+        </SectionReveal>
       </section>
 
       <section
@@ -49,7 +45,8 @@ export default function Home() {
           <h2 id="work-title">Work</h2>
         </div>
 
-        <div className="work-list">
+        <SectionReveal>
+          <div className="work-list">
           {siteContent.work.map((project, index) => (
             <article className="work-row" key={project.name}>
               <span className="item-index">
@@ -69,6 +66,7 @@ export default function Home() {
             </article>
           ))}
         </div>
+        </SectionReveal>
       </section>
 
       <section
@@ -76,33 +74,34 @@ export default function Home() {
         className="contact-section"
         aria-labelledby="contact-title"
       >
-        <p className="section-label">START A CONVERSATION</p>
-        <h2 id="contact-title">Have a system in mind?</h2>
-        <a className="contact-link" href={contactHref}>
-          <span>
-            <span className="contact-kind">Email</span>
-            {siteContent.email}
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a
-          className="contact-link"
-          href={instagramHref}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span>
-            <span className="contact-kind">Instagram</span>
-            {siteContent.instagram}
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
+        <div className="contact-pin">
+          <p className="section-label">START A CONVERSATION</p>
+          <h2 id="contact-title">Have a system in mind?</h2>
+          <a className="contact-link" href={contactHref}>
+            <span>
+              <span className="contact-kind">Email</span>
+              {siteContent.email}
+            </span>
+            <span aria-hidden="true">↗</span>
+          </a>
+          <a
+            className="contact-link"
+            href={instagramHref}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>
+              <span className="contact-kind">Instagram</span>
+              {siteContent.instagram}
+            </span>
+            <span aria-hidden="true">↗</span>
+          </a>
+          <footer className="site-footer">
+            <p>© 2026 CNNCT.APP</p>
+            <a href="#">BACK TO TOP</a>
+          </footer>
+        </div>
       </section>
-
-        <footer className="site-footer section-shell">
-          <p>© 2026 CNNCT.APP</p>
-          <a href="#">BACK TO TOP</a>
-        </footer>
       </div>
     </main>
   );
