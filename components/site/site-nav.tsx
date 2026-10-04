@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import gsap from "gsap";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { viewportHeight } from "@/components/site/handoff";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const links = [
   { id: "about", label: "About" },
@@ -37,6 +38,20 @@ function scrollTarget(id: string) {
   return previous ? previous.end : null;
 }
 
+function scrollPage(top: number) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo({ top, behavior: "instant" });
+    return;
+  }
+
+  gsap.to(window, {
+    scrollTo: top,
+    duration: 1,
+    ease: "power2.inOut",
+    overwrite: true,
+  });
+}
+
 function openSection(id: string) {
   const top = scrollTarget(id);
   if (top == null) {
@@ -44,7 +59,7 @@ function openSection(id: string) {
   }
 
   window.history.pushState(null, "", `#${id}`);
-  window.scrollTo({ top, behavior: "auto" });
+  scrollPage(top);
 }
 
 export function SiteNav() {
@@ -72,7 +87,7 @@ export function SiteNav() {
       }
 
       landed = true;
-      window.scrollTo({ top, behavior: "auto" });
+      window.scrollTo({ top, behavior: "instant" });
       ScrollTrigger.removeEventListener("refresh", go);
     };
 
@@ -110,6 +125,35 @@ export function SiteNav() {
       window.removeEventListener("resize", schedule);
       window.visualViewport?.removeEventListener("resize", schedule);
     };
+  }, []);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const anchor = (event.target as Element | null)?.closest('a[href="#"]');
+      if (
+        !anchor ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      window.history.pushState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+      scrollPage(0);
+    };
+
+    document.addEventListener("click", onClick);
+
+    return () => document.removeEventListener("click", onClick);
   }, []);
 
   return (

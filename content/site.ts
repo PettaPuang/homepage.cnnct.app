@@ -3,21 +3,21 @@ export const siteContent = {
   hero: ["SYSTEMS", "THAT MOVE", "BUSINESS"],
   scrollHero: ["connect", "and control", "business"],
   introduction: [
-    "A minimal framework for presenting digital ERP products,",
-    "control every business flow from one platform.",
+    "An ERP built for a single business,",
+    "following the workflow already in place.",
   ],
   introductionId: [
-    "Kerangka sederhana untuk menampilkan produk ERP digital,",
-    "kendalikan setiap alur bisnis dari satu platform.",
+    "ERP yang dibangun untuk satu bisnis,",
+    "mengikuti alur kerja yang sudah berjalan.",
   ],
   email: "admin@cnnct.app",
   instagram: "cnnct.app",
   services: [
     {
       index: "01",
-      title: "Dedicated SaaS ERP",
-      description: "An ERP built specifically for your own business.",
-      descriptionId: "ERP yang dibangun khusus untuk bisnis Anda.",
+      title: "Dedicated ERP",
+      description: "Prepared in your business's own name.",
+      descriptionId: "Disiapkan atas nama bisnis Anda.",
     },
     {
       index: "02",
@@ -39,6 +39,8 @@ export const siteContent = {
       year: "2026",
       url: "https://connect.cnnct.app",
       label: "connect.cnnct.app",
+      mark: "/work/connect.png",
+      markOnDark: "/work/connect-on-dark.png",
       description: "General and simple ERP. POS and accounting.",
     },
     {
@@ -66,6 +68,7 @@ export const siteContent = {
       year: "2025",
       url: "https://nozzl.id",
       label: "nozzl.id",
+      mark: "/work/nozzl.png",
       description:
         "SPBU operations. Sales flow, purchasing, nozzle and fuel-tank control, and financial statements.",
     },

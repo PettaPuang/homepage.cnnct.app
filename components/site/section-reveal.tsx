@@ -10,6 +10,7 @@ import {
   clearHandoff,
   coverProgress,
   foldOffset,
+  handoffPause,
   holdLayer,
   pullHandoff,
   sectionGap,
@@ -30,8 +31,9 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
   useGSAP(
     () => {
       const media = gsap.matchMedia();
+      const motion = "(prefers-reduced-motion: no-preference)";
 
-      media.add("(prefers-reduced-motion: no-preference)", () => {
+      const mount = (wideLandscape: boolean) => {
         const body = rootRef.current;
         const section = body?.closest("section");
 
@@ -39,14 +41,25 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const enterTogether = wideLandscape && section.id === "work";
         const clip = () => section.classList.add("is-reveal-clip");
         const unclip = () => section.classList.remove("is-reveal-clip");
         const rowExtra = () =>
           stickAfterReveal
             ? Math.max(0, section.offsetHeight - viewportHeight())
             : 0;
+        const coverAt = (extra: number) => {
+          if (!enterTogether) {
+            return coverProgress(extra);
+          }
+
+          const height = viewportHeight();
+          const total = height + extra;
+
+          return (extra + height * handoffPause) / total;
+        };
         const syncLayer = (progress: number, active: boolean) => {
-          holdLayer(section, active && progress < coverProgress(rowExtra()));
+          holdLayer(section, active && progress < coverAt(rowExtra()));
         };
         const holdAtTop = () => {
           section.style.top = "0px";
@@ -125,7 +138,8 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
 
               const extra = rowExtra();
               const height = viewportHeight();
-              return `+=${height * 2 + extra}`;
+              const lead = enterTogether ? 0 : height;
+              return `+=${lead + height + extra}`;
             },
             pin: true,
             scrub: true,
@@ -169,15 +183,17 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           },
         });
 
-        timeline.from(
-          body,
-          {
-            y: () => foldOffset(body, section),
-            duration: 0.65,
-            ease: "none",
-          },
-          0.35,
-        );
+        if (!enterTogether) {
+          timeline.from(
+            body,
+            {
+              y: () => foldOffset(body, section),
+              duration: 0.65,
+              ease: "none",
+            },
+            0.35,
+          );
+        }
 
         const holdThenCover = (at: number | string) => {
           appendHold(timeline, hold, shiftNext, at);
@@ -197,7 +213,7 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
               duration: rowUnits(),
               ease: "none",
             },
-            1,
+            enterTogether ? 0 : 1,
           );
           holdThenCover(">");
         }
@@ -216,7 +232,17 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
             ScrollTrigger.removeEventListener("refreshInit", clearWorkShift);
           }
         };
-      });
+      };
+
+      media.add(`${motion} and (max-width: 1023px)`, () => mount(false));
+      media.add(
+        `${motion} and (min-width: 1024px) and (orientation: portrait)`,
+        () => mount(false),
+      );
+      media.add(
+        `${motion} and (min-width: 1024px) and (orientation: landscape)`,
+        () => mount(true),
+      );
 
       return () => media.revert();
     },

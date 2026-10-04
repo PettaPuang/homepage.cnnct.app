@@ -79,6 +79,35 @@ export function Hero() {
             window.matchMedia(
               "(min-width: 1024px) and (orientation: landscape)",
             ).matches;
+
+          if (section.id === "work") {
+            const title = section.querySelector<HTMLElement>("#work-title");
+            const row = section.querySelector<HTMLElement>(".work-row");
+
+            if (!split || !header || !title) {
+              if (section.style.getPropertyValue("--work-align")) {
+                section.style.removeProperty("--work-align");
+                ScrollTrigger.refresh();
+              }
+            } else {
+              const rowPad = row
+                ? Number.parseFloat(window.getComputedStyle(row).paddingTop) || 0
+                : 0;
+              const align = Math.max(
+                0,
+                Math.round(header.offsetTop + title.offsetTop - rowPad),
+              );
+              const current = Number.parseFloat(
+                section.style.getPropertyValue("--work-align"),
+              );
+
+              if (!Number.isFinite(current) || Math.abs(current - align) > 1) {
+                section.style.setProperty("--work-align", `${align}px`);
+                ScrollTrigger.refresh();
+              }
+            }
+          }
+
           const reveal = content.closest(".section-reveal");
           const contentHeight =
             reveal instanceof HTMLElement
@@ -132,32 +161,9 @@ export function Hero() {
         }
       });
       syncViewportHeight();
-      let appliedHeight = viewportHeight();
-      let viewportTimer: number | undefined;
-
-      const settleViewport = () => {
-        const next = viewportHeight();
-        if (next === appliedHeight) {
-          return;
-        }
-
-        appliedHeight = next;
-        syncViewportHeight();
-        ScrollTrigger.refresh();
-      };
-
-      const scheduleViewport = () => {
-        window.clearTimeout(viewportTimer);
-        viewportTimer = window.setTimeout(settleViewport, 150);
-      };
+      ScrollTrigger.addEventListener("refreshInit", syncViewportHeight);
 
       window.addEventListener("resize", scheduleSectionLayout);
-      window.addEventListener("resize", scheduleViewport);
-      window.visualViewport?.addEventListener(
-        "resize",
-        scheduleSectionLayout,
-      );
-      window.visualViewport?.addEventListener("resize", scheduleViewport);
       updateSectionLayout();
       scheduleSectionLayout();
 
@@ -183,31 +189,41 @@ export function Hero() {
 
         placePostHero();
 
-        const syncTitleToWipe = () => {
-          if (!fromBottom || !hero) {
-            return;
-          }
+        const title = hero?.querySelector<HTMLElement>(
+          ".hero-transition-title",
+        );
+        const wipe = hero?.querySelector<HTMLElement>(".hero-transition-wipe");
+        const titleBox = { offset: 0, height: 0, heroHeight: 0 };
 
-          const title = hero.querySelector<HTMLElement>(
-            ".hero-transition-title",
-          );
-          const wipe = hero.querySelector<HTMLElement>(
-            ".hero-transition-wipe",
-          );
-
-          if (!title || !wipe) {
+        const measureTitle = () => {
+          if (!fromBottom || !hero || !title) {
             return;
           }
 
           const heroRect = hero.getBoundingClientRect();
           const titleRect = title.getBoundingClientRect();
+          titleBox.offset = titleRect.top - heroRect.top;
+          titleBox.height = titleRect.height;
+          titleBox.heroHeight = heroRect.height;
+        };
+
+        const syncTitleToWipe = () => {
+          if (!fromBottom || !hero) {
+            return;
+          }
+
+          if (!title || !wipe) {
+            return;
+          }
+
           const scaleY = Number(gsap.getProperty(wipe, "scaleY"));
           const scale = Number.isFinite(scaleY) ? scaleY : 0;
-          const edgeY = heroRect.bottom - heroRect.height * scale;
           const hiddenTop = gsap.utils.clamp(
             0,
-            titleRect.height,
-            edgeY - titleRect.top,
+            titleBox.height,
+            titleBox.heroHeight -
+              titleBox.offset -
+              titleBox.heroHeight * scale,
           );
 
           title.style.clipPath = `inset(${hiddenTop}px 0px 0px 0px)`;
@@ -237,6 +253,7 @@ export function Hero() {
               }
             },
             onRefresh: (self) => {
+              measureTitle();
               syncTitleToWipe();
               placePostHero();
               if (hero) {
@@ -274,6 +291,7 @@ export function Hero() {
         scrollTimeline.set("#hero-title", { visibility: "hidden" }, 1);
         appendHold(scrollTimeline, hold, applyHeroHold, 1);
 
+        measureTitle();
         syncTitleToWipe();
       };
 
@@ -354,20 +372,15 @@ export function Hero() {
         resizeObserver.disconnect();
         window.cancelAnimationFrame(layoutFrame);
         window.clearTimeout(layoutTimer);
-        window.clearTimeout(viewportTimer);
         window.removeEventListener("resize", scheduleSectionLayout);
-        window.removeEventListener("resize", scheduleViewport);
-        window.visualViewport?.removeEventListener(
-          "resize",
-          scheduleSectionLayout,
-        );
-        window.visualViewport?.removeEventListener("resize", scheduleViewport);
+        ScrollTrigger.removeEventListener("refreshInit", syncViewportHeight);
         stackedSections.forEach((section) =>
           section.style.removeProperty("--stack-top"),
         );
-        ruledSections.forEach((section) =>
-          section.classList.remove("is-scroll-section"),
-        );
+        ruledSections.forEach((section) => {
+          section.classList.remove("is-scroll-section");
+          section.style.removeProperty("--work-align");
+        });
         media.revert();
       };
     },

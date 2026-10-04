@@ -26,15 +26,33 @@ function sectionPaintLayer(section: HTMLElement) {
   return value;
 }
 
+let cachedHeight = 0;
+let cachedWidth = 0;
+
+function measureViewport() {
+  if (
+    !cachedHeight ||
+    window.innerWidth !== cachedWidth ||
+    !window.matchMedia("(pointer: coarse)").matches
+  ) {
+    cachedWidth = window.innerWidth;
+    cachedHeight = Math.max(1, Math.round(window.innerHeight));
+  }
+}
+
 export function viewportHeight() {
-  const height = window.visualViewport?.height ?? window.innerHeight;
-  return Math.max(1, Math.round(height));
+  if (!cachedHeight) {
+    measureViewport();
+  }
+
+  return cachedHeight;
 }
 
 export function syncViewportHeight() {
+  measureViewport();
   document.documentElement.style.setProperty(
     "--viewport-height",
-    `${viewportHeight()}px`,
+    `${cachedHeight}px`,
   );
 }
 

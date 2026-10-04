@@ -23,7 +23,6 @@
 
 html {
   background: var(--background);
-  scroll-behavior: smooth;
 }
 
 body {
@@ -888,6 +887,7 @@ a:focus-visible {
     order: 1;
     min-width: 0;
     width: 100%;
+    padding-top: var(--work-align, 0px);
     padding-right: clamp(1rem, 2vw, 2rem);
   }
 
@@ -922,10 +922,6 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {
