@@ -74,10 +74,23 @@ export function Hero() {
             return;
           }
 
+          const split =
+            section.id === "work" &&
+            window.matchMedia(
+              "(min-width: 1024px) and (orientation: landscape)",
+            ).matches;
+          const reveal = content.closest(".section-reveal");
+          const contentHeight =
+            reveal instanceof HTMLElement
+              ? reveal.offsetHeight
+              : content.offsetHeight;
+          const occupied = split
+            ? Math.max(header.offsetHeight, contentHeight)
+            : header.offsetHeight + contentHeight;
+
           section.classList.toggle(
             "is-scroll-section",
-            header.offsetHeight + content.offsetHeight >
-              getSectionViewportHeight(section),
+            occupied > getSectionViewportHeight(section),
           );
         });
 

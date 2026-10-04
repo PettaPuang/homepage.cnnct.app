@@ -82,6 +82,8 @@ Background putih. Header: label `SELECTED SYSTEMS`, judul `WORK`.
 
 Header masuk lebih dulu dan ikut pin. Body daftar translate dari fold.
 
+Di landscape dengan lebar minimal 1024px, daftar ada di kiri (dua pertiga layar) dan header di kanan (sepertiga layar). Header tetap di kolom kanan saat daftar naik. Portrait dan layar yang lebih sempit tetap header di atas, daftar di bawah.
+
 Delapan baris. Tiap baris: nomor, nama, ringkasan, tautan, tahun. TAMA, KAYUWA, dan JIYUU punya logomark di kiri nama. Mark Kayuwa berganti putih saat baris di-hover.
 
 1. `CONNECT`, 2026, `connect.cnnct.app`. ERP umum. POS dan akuntansi.

@@ -861,6 +861,66 @@ a:focus-visible {
   }
 }
 
+@media (min-width: 1024px) and (orientation: landscape) {
+  #work {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  #work .section-heading {
+    order: 2;
+    container-type: inline-size;
+    align-items: center;
+    justify-content: center;
+    height: var(--viewport-height);
+    margin: 0;
+    padding: var(--page-gutter);
+    text-align: center;
+    border-left: 1px solid var(--line);
+  }
+
+  #work .section-heading h2 {
+    font-size: min(28cqi, 24svh, 10rem);
+  }
+
+  #work .section-reveal {
+    order: 1;
+    min-width: 0;
+    width: 100%;
+    padding-right: clamp(1rem, 2vw, 2rem);
+  }
+
+  .work-list {
+    grid-template-columns: 2.25rem minmax(0, 0.9fr) minmax(0, 1.2fr);
+  }
+
+  .work-row {
+    min-height: 0;
+    padding-block: 1.35rem;
+  }
+
+  .work-row h3 {
+    font-size: clamp(1.7rem, 2.4vw, 3.25rem);
+  }
+
+  .work-summary {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .work-link {
+    grid-column: 2;
+    grid-row: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .work-row time {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
