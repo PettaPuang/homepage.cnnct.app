@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Hero } from "@/components/site/hero";
 import { SectionReveal } from "@/components/site/section-reveal";
 import { ServiceGrid } from "@/components/site/service-grid";
@@ -48,24 +49,61 @@ export default function Home() {
 
         <SectionReveal>
           <div className="work-list">
-          {siteContent.work.map((project, index) => (
-            <article className="work-row" key={project.name}>
-              <span className="item-index">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h3>{project.name}</h3>
-              <p className="work-summary">{project.description}</p>
-              <a
-                className="work-link"
-                href={project.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {project.label}
-              </a>
-              <time>{project.year}</time>
-            </article>
-          ))}
+          {siteContent.work.map((project, index) => {
+            const mark = "mark" in project ? project.mark : null;
+            const markOnDark =
+              "markOnDark" in project ? project.markOnDark : null;
+            const markTile = "markTile" in project && project.markTile;
+
+            return (
+              <article className="work-row" key={project.name}>
+                <span className="item-index">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3>
+                  {mark ? (
+                    <span
+                      className={
+                        markTile
+                          ? "work-mark work-mark-tile"
+                          : markOnDark
+                            ? "work-mark work-mark-pair"
+                            : "work-mark"
+                      }
+                    >
+                      <Image
+                      className="work-mark-on-light"
+                      src={mark}
+                      alt=""
+                      fill
+                      sizes="4rem"
+                    />
+                    {markOnDark ? (
+                      <Image
+                        className="work-mark-on-dark"
+                        src={markOnDark}
+                        alt=""
+                        fill
+                        sizes="4rem"
+                      />
+                    ) : null}
+                    </span>
+                  ) : null}
+                  {project.name}
+                </h3>
+                <p className="work-summary">{project.description}</p>
+                <a
+                  className="work-link"
+                  href={project.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {project.label}
+                </a>
+                <time>{project.year}</time>
+              </article>
+            );
+          })}
         </div>
         </SectionReveal>
       </section>

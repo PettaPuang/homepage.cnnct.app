@@ -480,11 +480,41 @@ a:focus-visible {
 }
 
 .work-row h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.22em;
   margin: 0;
   font-size: clamp(2.3rem, 5vw, 6rem);
   font-weight: 800;
   letter-spacing: -0.065em;
   line-height: 0.85;
+}
+
+.work-mark {
+  position: relative;
+  flex: none;
+  width: 0.62em;
+  height: 0.62em;
+}
+
+.work-mark img {
+  object-fit: contain;
+}
+
+.work-mark-on-dark {
+  opacity: 0;
+}
+
+.work-row:hover .work-mark-pair .work-mark-on-dark {
+  opacity: 1;
+}
+
+.work-row:hover .work-mark-pair .work-mark-on-light {
+  opacity: 0;
+}
+
+.work-row:hover .work-mark-tile {
+  outline: 1px solid currentColor;
 }
 
 .work-summary {

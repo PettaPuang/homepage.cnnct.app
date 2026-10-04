@@ -82,13 +82,16 @@ Background putih. Header: label `SELECTED SYSTEMS`, judul `WORK`.
 
 Header masuk lebih dulu dan ikut pin. Body daftar translate dari fold.
 
-Lima baris. Tiap baris: nomor, nama, ringkasan, tautan, tahun.
+Delapan baris. Tiap baris: nomor, nama, ringkasan, tautan, tahun. TAMA, KAYUWA, dan JIYUU punya logomark di kiri nama. Mark Kayuwa berganti putih saat baris di-hover.
 
 1. `CONNECT`, 2026, `connect.cnnct.app`. ERP umum. POS dan akuntansi.
 2. `TAMA`, 2025, `tamaindonesia.cnnct.app`. ERP retail: operasi, inventori, akuntansi, HRD.
 3. `KAYUWA`, 2025, `kayuwaindonesia.cnnct.app`. ERP manufaktur laser-cutting.
 4. `NOZZL`, 2025, `nozzl.id`. Operasi SPBU.
 5. `JIYUU`, 2026, `jiyuucoffee.cnnct.app`. ERP kafe: POS, inventori, resep, shift, banyak lokasi.
+6. `BACKSTAGE`, 2026, `backstage.cnnct.app`. ERP roastery: proses roasting, resep, inventori, penjualan, pembelian, aset, dan akuntansi.
+7. `ADM`, 2026, `azkadermawanmotor.cnnct.app`. ERP jual beli mobil: penjualan, inventori, pembelian, aset, akuntansi, dan kapitalisasi inventori.
+8. `PRISMA`, 2026, `prisma.cnnct.app`. ERP kontraktor konstruksi dan interior: biaya proyek, anggaran, tagihan, dan progres tiap pekerjaan.
 
 Tinggi daftar lebih besar dari viewport. Header tetap di atas viewport. Body terus di-translate ke atas sampai baris terakhir mencapai fold. Header tidak ikut turun ke bawah daftar.
 
