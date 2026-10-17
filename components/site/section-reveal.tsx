@@ -42,11 +42,16 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         }
 
         const enterTogether = wideLandscape && section.id === "work";
+        const stickAfterReveal = section.id === "work";
         const clip = () => section.classList.add("is-reveal-clip");
         const unclip = () => section.classList.remove("is-reveal-clip");
         const rowExtra = () =>
           stickAfterReveal
             ? Math.max(0, section.offsetHeight - viewportHeight())
+            : 0;
+        const dwell = () =>
+          enterTogether
+            ? Math.max(0, viewportHeight() * (1 - handoffPause) - rowExtra())
             : 0;
         const coverAt = (extra: number) => {
           if (!enterTogether) {
@@ -54,9 +59,10 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
           }
 
           const height = viewportHeight();
-          const total = height + extra;
+          const wait = dwell();
+          const total = height + extra + wait;
 
-          return (extra + height * handoffPause) / total;
+          return (extra + wait + height * handoffPause) / total;
         };
         const syncLayer = (progress: number, active: boolean) => {
           holdLayer(section, active && progress < coverAt(rowExtra()));
@@ -72,7 +78,6 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
         section.classList.add("has-section-reveal");
         section.style.top = "0px";
 
-        const stickAfterReveal = section.id === "work";
         const handoff = section.id === "services";
         const nextSection = section.nextElementSibling;
         const hold = { offset: 0 };
@@ -139,11 +144,10 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
               const extra = rowExtra();
               const height = viewportHeight();
               const lead = enterTogether ? 0 : height;
-              return `+=${lead + height + extra}`;
+              return `+=${lead + height + extra + dwell()}`;
             },
             pin: true,
             scrub: true,
-            anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: pinPriority[section.id] ?? -2,
             onUpdate: (self) => {
@@ -215,6 +219,9 @@ export function SectionReveal({ children }: { children: React.ReactNode }) {
             },
             enterTogether ? 0 : 1,
           );
+          if (enterTogether) {
+            timeline.to({}, { duration: dwell() / viewportHeight() }, ">");
+          }
           holdThenCover(">");
         }
 

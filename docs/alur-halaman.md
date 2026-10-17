@@ -4,17 +4,17 @@ Scroll berjalan dari atas dokumen sampai akhir. Setiap handoff memakai pola yang
 
 Pause itu sekitar `0.4` tinggi viewport. Selama pause, tepi atas section berikutnya diam di fold (tepi bawah viewport), belum masuk.
 
-Kalau `prefers-reduced-motion: reduce` aktif, timeline scroll tidak dijalankan. Copy tampil langsung.
+Kalau `prefers-reduced-motion: reduce` aktif, timeline scroll tidak dijalankan. Copy tampil langsung. Hero tetap putih dengan heading `SYSTEMS` / `THAT MOVE` / `BUSINESS`; wipe hitam dan heading transisi tidak ditampilkan.
 
 ---
 
 ## Hero
 
-Section pertama mengisi viewport, background hitam. Copy: kicker `DIGITAL ERP STUDIO`, heading tiga baris `SYSTEMS` / `THAT MOVE` / `BUSINESS`, dan footer `EST. 2026` serta `MOVE TO EXPLORE`.
+Section pertama mengisi viewport, background putih. Teks hero, kicker, dan footer memakai `mix-blend-mode: difference`, jadi tampil hitam di atas putih dan putih di atas wipe hitam. Copy: kicker `DIGITAL ERP STUDIO`, heading tiga baris `SYSTEMS` / `THAT MOVE` / `BUSINESS`, dan footer `EST. 2026` serta `MOVE TO EXPLORE`.
 
 Entrance ini bukan scroll. Saat load, kicker, heading, dan footer masuk dari bawah. Kicker dan footer fade sambil translate. Heading masuk baris per baris, stagger.
 
-Di desktop (`hover`, pointer halus, lebar viewport minimal 768px) ada fluid layer di belakang copy. `pointermove` menggeser fluid. Di mobile layer ini tidak diaktifkan, canvas tetap opacity 0.
+Di desktop (`hover`, pointer halus, lebar viewport minimal 768px) ada fluid layer di belakang copy. `pointermove` menggeser fluid. Di mobile layer ini tidak diaktifkan dan disembunyikan (`display: none`), jadi tidak ikut membuat layer di browser.
 
 Lalu hero di-pin (`end += 200%`). Scroll tidak menggeser section. Yang bergerak adalah wipe hitam yang mengganti heading.
 
@@ -34,15 +34,15 @@ Setelah pause, about translate dari fold sampai `top: 0` dan menutup hero. Hero 
 
 Label `ABOUT`. Heading dua baris. Bahasa awal Inggris:
 
-`A minimal framework for presenting digital ERP products,`
+`An ERP built for a single business,`
 
-`control every business flow from one platform.`
+`following the workflow already in place.`
 
 Click pada copy men-toggle ke Indonesia:
 
-`Kerangka sederhana untuk menampilkan produk ERP digital,`
+`ERP yang dibangun untuk satu bisnis,`
 
-`kendalikan setiap alur bisnis dari satu platform.`
+`mengikuti alur kerja yang sudah berjalan.`
 
 Baris pertama sudah ada di section begitu about cover hero. About di-pin saat `top` section menyentuh `top` viewport (`end += 200%`). Baris kedua belum di viewport. Ia translate dari fold, scroll-linked, sampai sejajar di bawah baris pertama.
 
@@ -60,7 +60,7 @@ Header masuk lebih dulu, bersama section yang cover about. Section di-pin (`end 
 
 Tiga kartu:
 
-1. `Dedicated SaaS ERP` — `An ERP built specifically for your own business.`
+1. `Dedicated ERP` — `Prepared in your business's own name.`
 2. `Custom Operation` — `Fully customized business-flow operations.`
 3. `Business Compliance` — `Business and accounting guidance, with priority support.`
 
@@ -109,4 +109,4 @@ Section terakhir. Background hitam. Label `START A CONVERSATION`, heading `Have 
 
 Tinggi section mengikuti tinggi Work, supaya background hitam sampai akhir dokumen. Isi di dalam `.contact-pin`, `position: sticky; top: 0`, `min-height: 100svh`. Scroll sisa tidak menggeser heading dan tautan keluar viewport.
 
-Footer di dasar pin, inset mengikuti `--page-gutter`: `© 2026 CNNCT.APP` di kiri, `BACK TO TOP` di kanan.
+Footer di dasar pin, inset mengikuti `--page-gutter`: `PT. CNNCT DIGITAL PLATFORM. ALL RIGHTS RESERVED. © 2026` di kiri, `BACK TO TOP` di kanan.

@@ -71,7 +71,6 @@ export function StatementLine({ text }: { text: string }) {
             end: () => `+=${viewportHeight() * 2}`,
             pin: true,
             scrub: true,
-            anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: -1,
             onUpdate: (self) => {

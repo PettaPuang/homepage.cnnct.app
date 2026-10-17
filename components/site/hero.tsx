@@ -95,7 +95,7 @@ export function Hero() {
                 : 0;
               const align = Math.max(
                 0,
-                Math.round(header.offsetTop + title.offsetTop - rowPad),
+                Math.round(title.offsetTop - rowPad),
               );
               const current = Number.parseFloat(
                 section.style.getPropertyValue("--work-align"),
@@ -193,40 +193,73 @@ export function Hero() {
           ".hero-transition-title",
         );
         const wipe = hero?.querySelector<HTMLElement>(".hero-transition-wipe");
-        const titleBox = { offset: 0, height: 0, heroHeight: 0 };
+        const titleBox = {
+          offset: 0,
+          offsetLeft: 0,
+          height: 0,
+          width: 0,
+          heroHeight: 0,
+          heroWidth: 0,
+        };
 
         const measureTitle = () => {
-          if (!fromBottom || !hero || !title) {
+          if (!hero || !title) {
             return;
           }
 
           const heroRect = hero.getBoundingClientRect();
           const titleRect = title.getBoundingClientRect();
           titleBox.offset = titleRect.top - heroRect.top;
+          titleBox.offsetLeft = titleRect.left - heroRect.left;
           titleBox.height = titleRect.height;
+          titleBox.width = titleRect.width;
           titleBox.heroHeight = heroRect.height;
+          titleBox.heroWidth = heroRect.width;
         };
 
         const syncTitleToWipe = () => {
-          if (!fromBottom || !hero) {
+          if (!hero || !title || !wipe) {
             return;
           }
 
-          if (!title || !wipe) {
+          const wipeScale = Number(
+            gsap.getProperty(wipe, axis === "x" ? "scaleX" : "scaleY"),
+          );
+          const scale = Number.isFinite(wipeScale) ? wipeScale : 0;
+
+          if (axis === "up") {
+            const hiddenTop = gsap.utils.clamp(
+              0,
+              titleBox.height,
+              titleBox.heroHeight -
+                titleBox.offset -
+                titleBox.heroHeight * scale,
+            );
+
+            title.style.clipPath = `inset(${hiddenTop}px 0px 0px 0px)`;
             return;
           }
 
-          const scaleY = Number(gsap.getProperty(wipe, "scaleY"));
-          const scale = Number.isFinite(scaleY) ? scaleY : 0;
-          const hiddenTop = gsap.utils.clamp(
+          if (axis === "y") {
+            const hiddenBottom = gsap.utils.clamp(
+              0,
+              titleBox.height,
+              titleBox.height -
+                (titleBox.heroHeight * scale - titleBox.offset),
+            );
+
+            title.style.clipPath = `inset(0px 0px ${hiddenBottom}px 0px)`;
+            return;
+          }
+
+          const hiddenRight = gsap.utils.clamp(
             0,
-            titleBox.height,
-            titleBox.heroHeight -
-              titleBox.offset -
-              titleBox.heroHeight * scale,
+            titleBox.width,
+            titleBox.width -
+              (titleBox.heroWidth * scale - titleBox.offsetLeft),
           );
 
-          title.style.clipPath = `inset(${hiddenTop}px 0px 0px 0px)`;
+          title.style.clipPath = `inset(0px ${hiddenRight}px 0px 0px)`;
         };
 
         if (fromBottom) {
@@ -244,7 +277,6 @@ export function Hero() {
             end: () => `+=${viewportHeight() * 2}`,
             pin: true,
             scrub: true,
-            anticipatePin: 1,
             invalidateOnRefresh: true,
             refreshPriority: 0,
             onUpdate: (self) => {
@@ -275,18 +307,6 @@ export function Hero() {
           },
           0,
         );
-
-        if (!fromBottom) {
-          scrollTimeline.to(
-            ".hero-transition-title",
-            {
-              clipPath: "inset(0% 0% 0% 0%)",
-              duration: 1,
-              ease: "none",
-            },
-            0,
-          );
-        }
 
         scrollTimeline.set("#hero-title", { visibility: "hidden" }, 1);
         appendHold(scrollTimeline, hold, applyHeroHold, 1);
@@ -338,17 +358,18 @@ export function Hero() {
         clearHandoff(postHero);
       };
 
+      const clearHeroScroll = () => {
+        clearPostHero();
+        rootRef.current
+          ?.querySelector<HTMLElement>(".hero-transition-title")
+          ?.style.removeProperty("clip-path");
+      };
+
       media.add(
         "(prefers-reduced-motion: no-preference) and (max-width: 767px)",
         () => {
           createScrollTimeline("up");
-
-          return () => {
-            clearPostHero();
-            rootRef.current
-              ?.querySelector<HTMLElement>(".hero-transition-title")
-              ?.style.removeProperty("clip-path");
-          };
+          return clearHeroScroll;
         },
       );
 
@@ -356,7 +377,7 @@ export function Hero() {
         "(prefers-reduced-motion: no-preference) and (min-width: 768px) and (orientation: landscape)",
         () => {
           createScrollTimeline("x");
-          return clearPostHero;
+          return clearHeroScroll;
         },
       );
 
@@ -364,7 +385,7 @@ export function Hero() {
         "(prefers-reduced-motion: no-preference) and (min-width: 768px) and (orientation: portrait)",
         () => {
           createScrollTimeline("y");
-          return clearPostHero;
+          return clearHeroScroll;
         },
       );
 
@@ -400,7 +421,7 @@ export function Hero() {
             ))}
           </h1>
 
-          <h2 className="hero-title hero-transition-title">
+          <h2 className="hero-title hero-transition-title" aria-hidden="true">
             {siteContent.scrollHero.map((line) => (
               <span className="hero-line" key={line}>
                 <span className="hero-line-copy">{line}</span>

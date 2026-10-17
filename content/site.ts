@@ -102,6 +102,8 @@ export const siteContent = {
       year: "2026",
       url: "https://prisma.cnnct.app",
       label: "prisma.cnnct.app",
+      mark: "/work/prisma.png",
+      markTile: true,
       description:
         "Dedicated ERP for Prisma Interior, a construction and interior contractor. Project cost, budgeting, billing, and progress for each job, from the budget through the bill and the work completed.",
     },
