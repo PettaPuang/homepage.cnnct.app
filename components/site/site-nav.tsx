@@ -183,6 +183,7 @@ export function SiteNav() {
             {link.label}
           </a>
         ))}
+        <a href="/business">Business</a>
       </nav>
     </header>
   );

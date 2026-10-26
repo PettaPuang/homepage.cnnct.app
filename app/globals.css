@@ -940,3 +940,190 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+body:has(.pintu) .site-nav,
+body:has(.pintu) .home-mark {
+  display: none;
+}
+
+.pintu {
+  width: min(40rem, 100%);
+  min-height: 100svh;
+  margin-inline: auto;
+  padding: clamp(4.5rem, 12vh, 7rem) var(--page-gutter) 4rem;
+}
+
+.pintu-mark {
+  display: block;
+  width: auto;
+  height: 1.4rem;
+  margin: 0;
+}
+
+.pintu-admin {
+  width: min(52rem, 100%);
+}
+
+.pintu h1,
+.pintu h2,
+.pintu h3,
+.pintu p {
+  margin: 0;
+}
+
+.pintu h1 {
+  margin: 0.35rem 0 1.75rem;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.85;
+  text-transform: uppercase;
+}
+
+.pintu h2 {
+  margin-bottom: 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.pintu h3 {
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.pintu-label {
+  font-family: var(--font-dm-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.pintu-toolbar,
+.pintu-toolbar-actions,
+.pintu-access-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.pintu-toolbar {
+  margin-bottom: 1.5rem;
+}
+
+.pintu-toolbar-actions {
+  justify-content: flex-end;
+}
+
+.pintu form,
+.pintu-account {
+  display: grid;
+  gap: 0.85rem;
+  border-top: 1px solid var(--line);
+  padding-block: 1.15rem;
+}
+
+.pintu-account form {
+  border-top: 0;
+  padding: 0;
+}
+
+.pintu-cards {
+  display: grid;
+  gap: 0;
+}
+
+.pintu label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pintu input,
+.pintu select,
+.pintu button,
+.pintu a.pintu-button-quiet {
+  font: inherit;
+}
+
+.pintu input,
+.pintu select {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.55rem 0;
+  color: inherit;
+}
+
+.pintu button,
+.pintu a.pintu-button-quiet {
+  justify-self: start;
+  border: 1px solid var(--line);
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-family: var(--font-dm-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.pintu .pintu-button-quiet,
+.pintu a.pintu-button-quiet {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.pintu-card-button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+}
+
+.pintu-error,
+.pintu-note {
+  font-family: var(--font-dm-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.pintu-access-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pintu-access-list li div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.pintu-access-list span {
+  color: inherit;
+  font-family: var(--font-dm-mono), monospace;
+  font-size: 0.75rem;
+}
+
+.pintu button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.pintu input:focus-visible,
+.pintu select:focus-visible,
+.pintu button:focus-visible,
+.pintu a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
